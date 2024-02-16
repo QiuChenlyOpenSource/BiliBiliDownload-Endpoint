@@ -147,3 +147,24 @@ class Bilibili:
         u = f"https://api.bilibili.com/x/v3/fav/resource/list?media_id={media_id}&pn={pn}&ps={ps}&keyword=&order=mtime&type=0&tid=0&platform=web"
         res = self.getHttp(u).json()
         return res
+
+    # https://api.bilibili.com/x/web-interface/nav/stat 获取动态粉丝信息
+    async def GetUserStat(self):
+        u = f"https://api.bilibili.com/x/web-interface/nav/stat"
+        res = self.getHttp(u).json()
+        return res
+
+    async def checkUserCookieNeedUpdate(self):
+        # 检查cookie是否过期
+        # https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf= 发现这个接口需要让用户更新cookie 暂时没发现有什么用
+        u = "https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf="
+        """{
+            "code": 0,
+            "message": "0",
+            "ttl": 1,
+            "data": {
+                "refresh": true,
+                "timestamp": 1708064491504
+            }
+        }
+        """

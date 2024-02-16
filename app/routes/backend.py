@@ -2,12 +2,13 @@
 #  @作者 : 秋城落叶(QiuChenly)
 #  @邮件 : qiuchenly@outlook.com
 #  @文件 : 项目 [BiliBiliApp] - backend.py by qiuchenly
-#  @时间 : 2024/2/16 上午3:01
+#  @时间 : 2024/2/16 下午1:03
 from fastapi import APIRouter
 
 from bilibili.WebApi import Bilibili
 from database import LoginSession
 from models.UserConfig import GetQRCode
+import base64
 
 router = APIRouter(prefix="/bili")
 
@@ -133,4 +134,40 @@ async def get_user_favorite_video(media_id: int, pn=1, ps=20):
         "code": 0,
         "msg": "获取成功",
         "data": favorite["data"],
+    }
+
+
+# 根据uid查询用户的信息
+@router.get("/login/user/spec/{uid}")
+async def get_user_info_by_uid(uid: int):
+    # 根据ID 查询到对应的数据库条目
+    tmp = Bilibili()
+    user = await tmp.setUserByUserID(uid)
+    info = await tmp.getUserInfo()
+    # 获取粉丝数据
+    fans = await tmp.GetUserStat()
+
+    return {
+        "code": 0,
+        "msg": "获取成功",
+        "data": {**info["data"], "fans": fans["data"]},
+    }
+
+
+# 根据提交的url加载对应的数据并转为base64返回
+@router.get("/login/user/cover/getUrl")
+async def get_user_cover(url: str, userId: int):
+    if userId:
+        tmp = Bilibili()
+        user = await tmp.setUserByUserID(userId)
+    else:
+        tmp = bili
+    # 根据url读取对应的图片并转为base64返回
+    data = tmp.http.getHttp(url)
+    # 把content转为base64
+    img = base64.b64encode(data.content).decode()
+    return {
+        "code": 0,
+        "msg": "获取成功",
+        "data": "data:image/jpeg;base64," + img,
     }
