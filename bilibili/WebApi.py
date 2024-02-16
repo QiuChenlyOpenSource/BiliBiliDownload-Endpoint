@@ -4,10 +4,13 @@
 #  @文件 : 项目 [BiliBiliApp] - WebApi.py by qiuchenly
 #  @时间 : 2024/2/16 上午11:36
 import asyncio
+from datetime import datetime, timezone
+import json
 
-from database import LoginSession
+from database import LoginSession, UserInformationCache
 from models.UserConfig import QRCodeStatus, LoginResponse
 from utils.Http import HttpRequest
+from tortoise.models import Model, DoesNotExist
 
 
 class Bilibili:
@@ -122,9 +125,37 @@ class Bilibili:
             },
         )
 
-    async def getUserInfo(self):
+    async def getUserInfo(self, userId: str | None = None):
         u = "https://api.bilibili.com/x/web-interface/nav"
-        res = self.getHttp(u).json()
+
+        need_update = True
+
+        # 如果没有传入mid 则直接请求
+        if userId:
+            # 先从数据库里拿用户信息
+            try:
+                user = await UserInformationCache.get(mid=userId)
+            except DoesNotExist as e:
+                user = None
+            if user:
+                # 计算当前的时间和更新时间的差值 超过12小时就更新
+                need_update = (
+                    datetime.now(timezone.utc) - user.updated_at
+                ).seconds * 1000 > 1000 * 60 * 60 * 1
+                res = json.loads(user.info)
+
+        if need_update:
+            res = self.getHttp(u).json()
+            res = res["data"]
+            if user:
+                info = await UserInformationCache.filter(mid=userId).update(
+                    info=json.dumps(res), updated_at=datetime.now(timezone.utc)
+                )
+            else:
+                info = await UserInformationCache.create(
+                    mid=res["mid"], info=json.dumps(res)
+                )
+
         return res
 
     async def GetUserFavoriteDirectoryByUserId(self, uid: int):
@@ -154,10 +185,13 @@ class Bilibili:
         res = self.getHttp(u).json()
         return res
 
-    async def checkUserCookieNeedUpdate(self):
+    async def checkUserCookieNeedUpdate(self, csrf: str):
         # 检查cookie是否过期
         # https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf= 发现这个接口需要让用户更新cookie 暂时没发现有什么用
-        u = "https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf="
+        u = (
+            "https://passport.bilibili.com/x/passport-login/web/cookie/info?csrf="
+            + csrf
+        )
         """{
             "code": 0,
             "message": "0",
@@ -168,3 +202,18 @@ class Bilibili:
             }
         }
         """
+        res = self.getHttp(u).json()
+        return res
+
+    # https://api.bilibili.com/x/space/wbi/acc/info?mid=&token=&platform=web&web_location=1550101&w_rid=&wts= 根据mid w_rid wts 获取用户主页上的详细信息
+    async def GetUserSpaceInfoByMid(self, mid: int):
+        # wrid+wts 是根据用户信息算出来的
+        wts = ""
+        w_rid = ""
+        # 先从用户接口取两个Key出来
+        #   var t = getLocal("wbi_img_url")
+        #   , r = getLocal("wbi_sub_url");
+
+        u = f"https://api.bilibili.com/x/space/wbi/acc/info?mid={mid}&token=&platform=web&web_location=1550101&w_rid={w_rid}&wts={wts}"
+        res = self.getHttp(u).json()
+        return res

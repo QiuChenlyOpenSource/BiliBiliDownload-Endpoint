@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "测试数据库",
+            "database": "${workspaceFolder:BiliBiliApp}/userdb.sqlite3"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

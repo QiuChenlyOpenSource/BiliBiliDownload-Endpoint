@@ -6,6 +6,7 @@
 #
 
 from .DBEntitys import *
+from .UserInformationCache import *
 
 
 def load():

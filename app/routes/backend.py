@@ -100,7 +100,7 @@ async def get_user_info():
     return {
         "code": 0,
         "msg": "获取成功",
-        "data": info["data"],
+        "data": info,
     }
 
 
@@ -143,14 +143,14 @@ async def get_user_info_by_uid(uid: int):
     # 根据ID 查询到对应的数据库条目
     tmp = Bilibili()
     user = await tmp.setUserByUserID(uid)
-    info = await tmp.getUserInfo()
+    info = await tmp.getUserInfo(userId=uid)
     # 获取粉丝数据
     fans = await tmp.GetUserStat()
 
     return {
         "code": 0,
         "msg": "获取成功",
-        "data": {**info["data"], "fans": fans["data"]},
+        "data": {**info, "fans": fans["data"]},
     }
 
 
