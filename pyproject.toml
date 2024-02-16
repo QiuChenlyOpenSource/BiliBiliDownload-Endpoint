@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "bilibiliapp"
+version = "0.0.1"
+description = "哔哩哔哩视频托管下载导入Emby服务"
+authors = ["秋城落叶 <qiuchenly@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.2"
+uvicorn = "^0.27.1"
+tortoise-orm = "^0.20.0"
+black = "^24.2.0"
+httpx = {extras = ["http2"], version = "^0.26.0"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
